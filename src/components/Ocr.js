@@ -5,13 +5,13 @@ import { HfInference } from "@huggingface/inference";
 const OCR = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const [blobUrl, setBlobUrl] = useState('');
   const [client, setClient] = useState(null);
 
   useEffect(() => {
-    // Initialize Hugging Face inference client
-    setClient(new HfInference("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"));
-  }, []);
-
+  // Initialize Hugging Face inference client
+  setClient(new HfInference("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"))
+  },[])
   // Function to start video streaming
   const startVideo = async () => {
     try {
@@ -38,41 +38,59 @@ const OCR = () => {
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         canvas.toBlob(async (blob) => {
-          if (blob) {
-            // Upload the Blob to your server
-            const formData = new FormData();
-            formData.append('image', blob, 'image.png');
+            if (blob) {
+              // Upload Blob to your server
+              const formData = new FormData();
+              formData.append('image', blob, 'image.png');
 
-            try {
               const uploadResponse = await axios.post('https://auth.scinovas.com:5004/ocr', formData);
-              const publicImageUrl = 'https://auth.scinovas.com:5004/ocrImage/' + uploadResponse.data.url;
+              console.log(uploadResponse.data.url)
+              const publicImageUrl = 'https://auth.scinovas.com:5004/ocrImage/'+uploadResponse.data.url; // Server returns public URL
 
-              // Use Hugging Face model for image description or analysis (Vision + Text)
-              const imageProcessingResponse = await client.chatCompletion({
-                model: "meta-llama/Llama-3.2-11B-Vision-Instruct",
-                messages: [
-                  {
-                    role: "user",
-                    content: [
-                      { type: "text", text: "Describe this image in one sentence." },
-                      { type: "image_url", image_url: { url: publicImageUrl } }
-                    ]
-                  }
-                ],
-                max_tokens: 500
-              });
-
-              console.log("Image Description:", imageProcessingResponse);
-              const resultText = imageProcessingResponse.choices[0]?.message?.content || 'No description available';
-
-              alert(`Image Description: ${resultText}`);
-            } catch (error) {
-              console.error("Error uploading or processing image:", error);
+              try {
+                // Upload image to obtain a URL
+              //   const response = await axios.post('https://your-server-to-get-url.com/upload', formData);
+              //   const imageUrl = response.data.url;
+      
+              // console.log(blobUrl1)
+                // Process image with Hugging Face OCR
+                const chatCompletion = await client.chatCompletion({
+                  model: "meta-llama/Llama-3.2-11B-Vision-Instruct",
+                  messages: [
+                    {
+                      role: "user",
+                      content: [
+                        { type: "text", text: "Describe this image in one sentence." },
+                        { type: "image_url", image_url: { url: publicImageUrl } }
+                      ]
+                    }
+                  ],
+                  max_tokens: 500
+                });
+      
+                const resultText = chatCompletion.choices[0].message;
+                alert(`Detected Text: ${resultText}`);
+              } catch (error) {
+                console.error("Error processing image:", error);
+              }
             }
-          }
-        }, 'image/png');
+          }, 'image/png');
+
+        
       }
     }
+  };
+
+  // Utility function to convert DataURL to Blob
+  const dataURLtoBlob = (dataURL) => {
+    const byteString = atob(dataURL.split(',')[1]);
+    const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
+    const buffer = new ArrayBuffer(byteString.length);
+    const dataView = new Uint8Array(buffer);
+    for (let i = 0; i < byteString.length; i++) {
+      dataView[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([buffer], { type: mimeString });
   };
 
   return (
@@ -87,3 +105,4 @@ const OCR = () => {
 };
 
 export default OCR;
+
