@@ -49,7 +49,7 @@ const OCR = () => {
 
               // Use Hugging Face model for OCR or image analysis (ensure model is capable)
               const imageProcessingResponse = await client.imageClassification({
-                model: "google/vit-base-patch16-224-in21k", // Replace with a suitable model for OCR or vision task
+                model: "microsoft/trocr-base-printed", // A model that supports OCR tasks
                 inputs: publicImageUrl,
               });
 
