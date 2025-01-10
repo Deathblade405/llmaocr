@@ -47,14 +47,14 @@ const OCR = () => {
               const uploadResponse = await axios.post('https://auth.scinovas.com:5004/ocr', formData);
               const publicImageUrl = 'https://auth.scinovas.com:5004/ocrImage/' + uploadResponse.data.url;
 
-              // Use Hugging Face model for OCR or image analysis (ensure model is capable)
-              const imageProcessingResponse = await client.imageClassification({
-                model: "microsoft/trocr-base-printed", // A model that supports OCR tasks
+              // Use Hugging Face model for OCR (image-to-text pipeline)
+              const imageProcessingResponse = await client.imageToText({
+                model: "microsoft/trocr-base-printed", // OCR model with the correct pipeline
                 inputs: publicImageUrl,
               });
 
               console.log("OCR Result:", imageProcessingResponse);
-              const detectedText = imageProcessingResponse[0]?.label || 'No text detected';
+              const detectedText = imageProcessingResponse[0]?.generated_text || 'No text detected';
 
               alert(`Detected Text: ${detectedText}`);
             } catch (error) {
