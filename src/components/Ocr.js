@@ -47,16 +47,25 @@ const OCR = () => {
               const uploadResponse = await axios.post('https://auth.scinovas.com:5004/ocr', formData);
               const publicImageUrl = 'https://auth.scinovas.com:5004/ocrImage/' + uploadResponse.data.url;
 
-              // Use Hugging Face model for OCR (image-to-text pipeline)
-              const imageProcessingResponse = await client.imageToText({
-                model: "microsoft/trocr-base-printed", // OCR model with the correct pipeline
-                inputs: publicImageUrl,
+              // Use Hugging Face model for image description or analysis (Vision + Text)
+              const imageProcessingResponse = await client.chatCompletion({
+                model: "meta-llama/Llama-3.2-11B-Vision-Instruct",
+                messages: [
+                  {
+                    role: "user",
+                    content: [
+                      { type: "text", text: "Describe this image in one sentence." },
+                      { type: "image_url", image_url: { url: publicImageUrl } }
+                    ]
+                  }
+                ],
+                max_tokens: 500
               });
 
-              console.log("OCR Result:", imageProcessingResponse);
-              const detectedText = imageProcessingResponse[0]?.generated_text || 'No text detected';
+              console.log("Image Description:", imageProcessingResponse);
+              const resultText = imageProcessingResponse.choices[0]?.message?.content || 'No description available';
 
-              alert(`Detected Text: ${detectedText}`);
+              alert(`Image Description: ${resultText}`);
             } catch (error) {
               console.error("Error uploading or processing image:", error);
             }
